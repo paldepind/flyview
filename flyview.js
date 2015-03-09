@@ -59,20 +59,53 @@ function handleClass(elm, cls) {
   }
 }
 
+function handleStream(container, s) {
+  var elm = document.createTextNode('');
+  container.appendChild(elm);
+  s.map(function(v) {
+    if (v instanceof Element) {
+      elm.parentNode.replaceChild(v, elm);
+      elm = v;
+    } else {
+      if (!(elm instanceof Text)) {
+        var nElm = document.createTextNode('');
+        elm.parentNode.replaceChild(nElm, elm);
+        elm = nElm;
+      }
+      if (isPrimitive(v)) {
+        elm.textContent = v;
+      }
+    }
+  });
+}
+
 function handleMapper(container, mapper) {
   var st = mapper.s, fn = mapper.f, keyProp = mapper.p;
   var oldElms = {};
   st.map(function(vals) {
-    var child, newElms = {};
-    while (child = container.firstChild) {
-      container.removeChild(child);
-    }
-    for (var i = 0; i < vals.length; ++i) {
-      var key = keyProp !== undefined ? vals[i][keyProp] : vals[i];
-      var oldElm = oldElms[key];
-      var elm = oldElm ? oldElm : fn(vals[i]);
-      newElms[key] = elm;
-      container.appendChild(elm);
+    var i, key, oldElm, elm, child, newElms = {};
+    if (container.parentNode) {
+      var newContainer = container.cloneNode(false);
+      for (i = 0; i < vals.length; ++i) {
+        key = keyProp !== undefined ? vals[i][keyProp] : vals[i];
+        oldElm = oldElms[key];
+        elm = oldElm ? oldElm : fn(vals[i]);
+        newElms[key] = elm;
+        newContainer.appendChild(elm);
+      }
+      container.parentNode.replaceChild(newContainer, container);
+      container = newContainer;
+    } else {
+      while (child = container.firstChild) {
+        container.removeChild(child);
+      }
+      for (i = 0; i < vals.length; ++i) {
+        key = keyProp !== undefined ? vals[i][keyProp] : vals[i];
+        oldElm = oldElms[key];
+        elm = oldElm ? oldElm : fn(vals[i]);
+        newElms[key] = elm;
+        container.appendChild(elm);
+      }
     }
   });
 }
@@ -84,7 +117,7 @@ function handleContent(elm, content) {
     content = document.createTextNode(content);
     elm.appendChild(content);
   } else if (isStream(content)) {
-    updateProperty(content, elm, 'textContent');
+    handleStream(elm, content);
   } else if (isMapper(content)) {
     handleMapper(elm, content);
   } else if (isArray(content)) {

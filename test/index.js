@@ -59,11 +59,6 @@ describe('content', function() {
     var elm = v('div', {}, string);
     assert.equal(elm.firstChild.textContent, string);
   });
-  it('sets content if stream is passed', function() {
-    var stringStream = stream(string);
-    var elm = v('div', {}, stringStream);
-    assert.equal(elm.firstChild.textContent, string);
-  });
   it('adds elements as children', function() {
     var child1 = document.createElement('div');
     var child2 = document.createElement('span');
@@ -74,13 +69,54 @@ describe('content', function() {
     assert.equal(elm.children[1].tagName, 'SPAN');
     assert.equal(elm.children[2].tagName, 'A');
   });
-  it('both strings and elements', function() {
+  it('handles both strings and elements', function() {
     var child1 = document.createElement('div');
     var child2 = "I'm a text";
     var child3 = document.createElement('a');
     var elm = v('div', {}, [child1, child2, child3]);
     assert.equal(elm.children.length, 2);
     assert.equal(elm.innerHTML, "<div></div>I'm a text<a></a>");
+  });
+});
+
+describe('stream content', function() {
+  var string = 'The slow fox rolled under the lazy cat';
+  it('sets content if stream is passed', function() {
+    var stringStream = stream(string);
+    var elm = v('div', {}, stringStream);
+    assert.equal(elm.firstChild.textContent, string);
+  });
+  it('handles string stream among other children', function() {
+    var stringStream = stream(string);
+    var elm = v('div', {}, ['Foo ', stringStream]);
+    assert.equal('Foo ' + stringStream(), elm.innerHTML);
+  });
+  it('handles string stream among other children', function() {
+    var stringStream = stream('foobar');
+    var elm = v('div', {}, ['foo', stringStream, 'bar']);
+    assert.equal('foo' + stringStream() + 'bar', elm.innerHTML);
+    stringStream('ooo');
+    assert.equal('foo' + stringStream() + 'bar', elm.innerHTML);
+  });
+  it('adds elements from streams', function() {
+    var elmStream = stream(v('div', {}, 'Hello, Element!'));
+    var elm = v('div', {}, ['foo', elmStream, 'bar']);
+    assert.equal(elm.children.length, 1);
+    assert.equal('foo<div>Hello, Element!</div>bar', elm.innerHTML);
+    elmStream(v('b', {}, 'ooo'));
+    assert.equal('foo<b>ooo</b>bar', elm.innerHTML);
+  });
+  it('adds elements from streams', function() {
+    var elmStream = stream(undefined);
+    var elm = v('div', {}, ['foo', elmStream, 'bar']);
+    assert.equal(elm.children.length, 0);
+    assert.equal('foobar', elm.innerHTML);
+    elmStream(v('b', {}, 'ooo'));
+    assert.equal('foo<b>ooo</b>bar', elm.innerHTML);
+    elmStream(undefined);
+    assert.equal('foobar', elm.innerHTML);
+    elmStream('ooo');
+    assert.equal('fooooobar', elm.innerHTML);
   });
 });
 
