@@ -80,33 +80,30 @@ function handleStream(container, s) {
 }
 
 function handleMapper(container, mapper) {
-  var st = mapper.s, fn = mapper.f, keyProp = mapper.p;
-  var oldElms = {};
+  var st = mapper.s, fn = mapper.f, keyProp = mapper.p,
+      oldElms = {};
   st.map(function(vals) {
-    var i, key, oldElm, elm, child, newElms = {};
-    if (container.parentNode) {
-      var newContainer = container.cloneNode(false);
-      for (i = 0; i < vals.length; ++i) {
-        key = keyProp !== undefined ? vals[i][keyProp] : vals[i];
-        oldElm = oldElms[key];
-        elm = oldElm ? oldElm : fn(vals[i]);
-        newElms[key] = elm;
-        newContainer.appendChild(elm);
-      }
-      container.parentNode.replaceChild(newContainer, container);
-      container = newContainer;
-    } else {
-      while (child = container.firstChild) {
-        container.removeChild(child);
-      }
-      for (i = 0; i < vals.length; ++i) {
-        key = keyProp !== undefined ? vals[i][keyProp] : vals[i];
-        oldElm = oldElms[key];
-        elm = oldElm ? oldElm : fn(vals[i]);
-        newElms[key] = elm;
-        container.appendChild(elm);
-      }
+    var i, key, oldElm, elm, newElms = {},
+        parent = container.parentNode, next,
+        frag = document.createDocumentFragment();
+    if (parent !== null) {
+      parent.removeChild(container);
+      next = container.nextSibling;
     }
+    for (i = 0; i < vals.length; ++i) {
+      key = keyProp !== undefined ? vals[i][keyProp] : vals[i];
+      oldElm = oldElms[key];
+      elm = oldElm ? oldElm : fn(vals[i]);
+      newElms[key] = elm;
+      frag.appendChild(elm);
+    }
+    container.appendChild(frag);
+    if (next !== undefined) {
+      parent.insertBefore(container, next);
+    } else if (parent !== null) {
+      parent.appendChild(container);
+    }
+    oldElms = newElms;
   });
 }
 
