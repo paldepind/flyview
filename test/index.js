@@ -17,6 +17,23 @@ describe('class handling', function() {
     assert(elm.classList.contains('these'));
     assert(elm.classList.contains('classes'));
   });
+  it('adds classes in object', function() {
+    var elm = v('div', {class: {add: true, these: true, classes: true}});
+    assert(elm.classList.contains('add'));
+    assert(elm.classList.contains('these'));
+    assert(elm.classList.contains('classes'));
+  });
+  it('toggles classes based on streams', function() {
+    var c1 = stream(true), c2 = stream(false), c3 = stream(true);
+    var elm = v('div', {
+      class: {add: c1, these: c2, classes: c3}
+    });
+    assert(elm.classList.contains('add'));
+    assert(!elm.classList.contains('these'));
+    assert(elm.classList.contains('classes'));
+    c2(true);
+    assert(elm.classList.contains('these'));
+  });
 });
 
 describe('styles', function() {

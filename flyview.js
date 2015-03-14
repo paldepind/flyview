@@ -56,6 +56,13 @@ function handleClass(elm, cls) {
       list.add(c);
     });
   } else {
+    for (var key in cls) {
+      if (isStream(cls[key])) {
+        cls[key].map(list.toggle.bind(list, key));
+      } else {
+        list.toggle(key, cls[key]);
+      }
+    }
   }
 }
 
@@ -89,7 +96,7 @@ function handleMapper(container, mapper) {
     var i, key, oldElm, elm, newElms = {},
         parent = container.parentNode, next,
         frag = document.createDocumentFragment();
-    
+
     var children = [];
     for (i = 0; i < container.children.length; ++i) {
       children.push(container.children[i]);
