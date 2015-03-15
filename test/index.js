@@ -175,4 +175,19 @@ describe('map', function() {
     assert.equal(elm.children[0].innerHTML, '1');
     assert.equal(elm.children[1].innerHTML, '3');
   });
+  it('swaps element', function() {
+    var numbers = stream(['1', '2', '3']);
+    function numberElm(number) {
+      return v('span', {}, number);
+    }
+    var elm = v('div', {}, v.map(numbers, numberElm));
+    assert.equal(elm.children.length, 3);
+    assert.equal(elm.children[0].innerHTML, '1');
+    assert.equal(elm.children[1].innerHTML, '2');
+    assert.equal(elm.children[2].innerHTML, '3');
+    numbers(['1', '3']);
+    assert.equal(elm.children.length, 2);
+    assert.equal(elm.children[0].innerHTML, '1');
+    assert.equal(elm.children[1].innerHTML, '3');
+  });
 });
