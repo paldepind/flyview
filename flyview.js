@@ -51,16 +51,16 @@ Mapper.prototype.update = function(list) {
   var i, container = this.container,
       parent = container.parentNode, placeholder,
       frag = document.createDocumentFragment(),
-      children = [];
+      children = [],
+      lastAppendedTo, // Index of last appended to
+      actions = this.diff(list);
   for (i = 0; i < container.children.length; ++i) {
     children.push(container.children[i]);
   }
-  if (parent !== null) {
+  if (parent !== null && actions.length * 5 > children.length) {
     placeholder = document.createComment('');
     parent.replaceChild(placeholder, container);
   }
-  var lastAppendedTo, // Index of last appended to
-      actions = this.diff(list);
   for (i = 0; i < actions.length; ++i) {
     var a = actions[i];
     if (a.type === REMOVE) {
