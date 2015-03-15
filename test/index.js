@@ -76,6 +76,10 @@ describe('content', function() {
     var elm = v('div', {}, string);
     assert.equal(elm.firstChild.textContent, string);
   });
+  it('props can be left out', function() {
+    var elm = v('div', string);
+    assert.equal(elm.firstChild.textContent, string);
+  });
   it('adds elements as children', function() {
     var child1 = document.createElement('div');
     var child2 = document.createElement('span');

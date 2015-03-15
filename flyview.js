@@ -22,10 +22,6 @@ function isPrimitive(v) {
 
 var isArray = Array.isArray;
 
-function isMapper(o) {
-  return o && o.createFn;
-}
-
 // Constants
 var MOVE = 0, ADD = 1, REMOVE = 2;
 
@@ -213,7 +209,7 @@ function handleContent(elm, content) {
     elm.appendChild(content);
   } else if (isStream(content)) {
     handleStream(elm, content);
-  } else if (isMapper(content)) {
+  } else if (content instanceof Mapper) {
     content.attach(elm);
   } else if (isArray(content)) {
     for (i = 0; i < content.length; ++i) {
@@ -224,6 +220,11 @@ function handleContent(elm, content) {
 
 function v(name, props, content) {
   var i, key, elm = document.createElement(name);
+  if (content === undefined && (isPrimitive(props) ||
+      isArray(props) || props instanceof Mapper)) {
+    content = props;
+    props = undefined;
+  }
   // Handle properties
   for (key in props) {
     if (key === 'on') {
