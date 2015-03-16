@@ -32,6 +32,8 @@ function Mapper(stream, createFn, keyProp) {
   this.keyProp = keyProp;
   this.oldList = [];
   this.oldKeyToElm = {};
+  this.firstElm = null;
+  this.nrOfChildren = null;
 }
 
 Mapper.prototype.attach = function(container, s) {
@@ -43,15 +45,24 @@ Mapper.prototype.getKey = function(v) {
   return isString(this.keyProp) ? v[this.keyProp] : v;
 };
 
+Mapper.prototype.insertFrag = function(frag, before) {
+  if (this.firstElm === before || this.firstElm === null) {
+    this.firstElm = frag.children[0];
+  }
+  this.container.insertBefore(frag, before);
+};
+
 Mapper.prototype.update = function(list) {
   var i, container = this.container,
       parent = container.parentNode, placeholder,
       frag = document.createDocumentFragment(),
       children = [],
       lastAppendedTo, // Index of last appended to
-      actions = this.diff(list);
-  for (i = 0; i < container.children.length; ++i) {
-    children.push(container.children[i]);
+      actions = this.diff(list),
+      child = this.firstElm;
+  for (i = 0; i < this.nrOfChildren; ++i) {
+    children.push(child);
+    child = child.nextSibling;
   }
   if (parent !== null && actions.length * 5 > children.length) {
     placeholder = document.createComment('');
@@ -60,15 +71,17 @@ Mapper.prototype.update = function(list) {
   for (i = 0; i < actions.length; ++i) {
     var a = actions[i];
     if (a.type === REMOVE) {
+      this.nrOfChildren--;
       container.removeChild(children[a.idx]);
     } else {
       if (lastAppendedTo === undefined) {
         lastAppendedTo = a.to;
       } else if (a.to !== lastAppendedTo) {
-        container.insertBefore(frag, children[lastAppendedTo]);
+        this.insertFrag(frag, children[lastAppendedTo]);
         lastAppendedTo = a.to;
       }
       if (a.type === ADD) {
+        this.nrOfChildren++;
         frag.appendChild(this.createFn(list[a.elm], this.stream));
       } else {
         frag.appendChild(children[a.from]);
@@ -76,7 +89,7 @@ Mapper.prototype.update = function(list) {
     }
   }
   if (frag.children.length > 0) {
-    container.insertBefore(frag, children[lastAppendedTo]);
+    this.insertFrag(frag, children[lastAppendedTo]);
   }
   if (placeholder !== undefined) {
     parent.replaceChild(container, placeholder);
