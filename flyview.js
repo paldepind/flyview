@@ -234,7 +234,7 @@ function handleContent(elm, content) {
 function v(name, props, content) {
   var i, key, elm = document.createElement(name);
   if (content === undefined && (isPrimitive(props) ||
-      isArray(props) || props instanceof Mapper)) {
+      isStream(props) || isArray(props) || props instanceof Mapper)) {
     content = props;
     props = undefined;
   }

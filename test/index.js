@@ -80,6 +80,13 @@ describe('content', function() {
     var elm = v('div', string);
     assert.equal(elm.firstChild.textContent, string);
   });
+  it('can be stream of strings', function() {
+    var s = stream('Hello');
+    var elm = v('div', s);
+    assert.equal(elm.firstChild.textContent, s());
+    s('World');
+    assert.equal(elm.firstChild.textContent, s());
+  });
   it('adds elements as children', function() {
     var child1 = document.createElement('div');
     var child2 = document.createElement('span');
