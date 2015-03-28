@@ -225,7 +225,7 @@ function handleContent(elm, content) {
   } else if (content instanceof Mapper) {
     content.attach(elm);
   } else if (isArray(content)) {
-    for (i = 0; i < content.length; ++i) {
+    for (var i = 0; i < content.length; ++i) {
       handleContent(elm, content[i]);
     }
   }
@@ -242,6 +242,8 @@ function v(name, props, content) {
   for (key in props) {
     if (key === 'on') {
       addListeners(elm, props.on);
+    } else if (key[0] === 'o' && key[1] === 'n') {
+      elm.addEventListener(key.slice(2), props[key]);
     } else if (key === 'style') {
       applyStyles(elm, props.style);
     } else if (key === 'class') {

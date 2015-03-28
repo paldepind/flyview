@@ -58,10 +58,19 @@ describe('styles', function() {
 });
 
 describe('event listeners', function() {
-  it('triggers event listeners', function() {
+  it('triggers event listeners in on object', function() {
     var called = 0;
     var clicks = function() { called++; };
     var elm = v('div', { on: {click: clicks} });
+    elm.click();
+    elm.click();
+    elm.click();
+    assert.equal(called, 3);
+  });
+  it('triggers event listeners attached with on*', function() {
+    var called = 0;
+    var clicks = function() { called++; };
+    var elm = v('div', {onclick: clicks});
     elm.click();
     elm.click();
     elm.click();
@@ -212,10 +221,6 @@ describe('map', function() {
       numberElm(4),
     ]);
     assert.equal(elm.children.length, 5);
-    for (var i = 0; i < elm.children.length; ++i) {
-     console.log(elm.children[i].innerHTML);
-    }
-    console.log(elm.children);
     assert.equal(elm.children[0].innerHTML, '0');
     assert.equal(elm.children[1].innerHTML, '1');
     assert.equal(elm.children[2].innerHTML, '2');
@@ -239,10 +244,6 @@ describe('map', function() {
       numberElm(4),
     ]);
     assert.equal(elm.children.length, 5);
-    for (var i = 0; i < elm.children.length; ++i) {
-     console.log(elm.children[i].innerHTML);
-    }
-    console.log(elm.children);
     assert.equal(elm.children[0].innerHTML, '0');
     assert.equal(elm.children[1].innerHTML, '1');
     assert.equal(elm.children[2].innerHTML, '2');
