@@ -282,4 +282,34 @@ describe('map', function() {
     assert.equal(elm.children[2].innerHTML, '1');
     assert.equal(elm.children[3].innerHTML, '4');
   });
+  it('preserves elements before and after with empty list', function() {
+    var numbers = stream([1, 2, 3]);
+    function numberElm(number) {
+      return v('span', {}, number);
+    }
+    var elm = v('div', {}, [
+      numberElm(0),
+      v.map(numbers, numberElm),
+      numberElm(4),
+    ]);
+    fakeRaf.step();
+    assert.equal(elm.children.length, 5);
+    assert.equal(elm.children[0].innerHTML, '0');
+    assert.equal(elm.children[1].innerHTML, '1');
+    assert.equal(elm.children[2].innerHTML, '2');
+    assert.equal(elm.children[3].innerHTML, '3');
+    assert.equal(elm.children[4].innerHTML, '4');
+    numbers([]);
+    fakeRaf.step();
+    assert.equal(elm.children.length, 2);
+    assert.equal(elm.children[0].innerHTML, '0');
+    assert.equal(elm.children[1].innerHTML, '4');
+    numbers([2, 1]);
+    fakeRaf.step();
+    assert.equal(elm.children.length, 4);
+    assert.equal(elm.children[0].innerHTML, '0');
+    assert.equal(elm.children[1].innerHTML, '2');
+    assert.equal(elm.children[2].innerHTML, '1');
+    assert.equal(elm.children[3].innerHTML, '4');
+  });
 });
