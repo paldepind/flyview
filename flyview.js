@@ -20,6 +20,20 @@ function isPrimitive(v) {
   return typeof v === 'string' || typeof v === 'number';
 }
 
+function onFrame(f) {
+  var requested = false, val;
+  return function(v) {
+    val = v;
+    if (!requested) {
+      requested = true;
+      requestAnimationFrame(function() {
+        requested = false;
+        f(val);
+      });
+    }
+  };
+}
+
 var isArray = Array.isArray;
 
 // Constants
@@ -32,13 +46,17 @@ function Mapper(stream, createFn, keyProp) {
   this.keyProp = keyProp;
   this.oldList = [];
   this.oldKeyToElm = {};
-  this.firstElm = null;
-  this.nrOfChildren = null;
+  this.preElm = null;
+  this.postElm = null;
 }
 
-Mapper.prototype.attach = function(container, s) {
+Mapper.prototype.attach = function(container) {
   this.container = container;
-  this.stream.map(this.update.bind(this));
+  this.preElm = document.createComment('Begin map');
+  this.postElm = document.createComment('End map');
+  container.appendChild(this.preElm);
+  container.appendChild(this.postElm);
+  this.stream.map(onFrame(this.update.bind(this)));
 };
 
 Mapper.prototype.getKey = function(v) {
@@ -46,9 +64,6 @@ Mapper.prototype.getKey = function(v) {
 };
 
 Mapper.prototype.insertFrag = function(frag, before) {
-  if (this.firstElm === before || this.firstElm === null) {
-    this.firstElm = frag.children[0];
-  }
   this.container.insertBefore(frag, before);
 };
 
@@ -59,10 +74,10 @@ Mapper.prototype.update = function(list) {
       children = [],
       lastAppendedTo, // Index of last appended to
       actions = this.diff(list),
-      child = this.firstElm;
-  for (i = 0; i < this.nrOfChildren; ++i) {
-    children.push(child);
+      child = this.preElm;
+  while (child !== this.postElm) {
     child = child.nextSibling;
+    children.push(child);
   }
   if (parent !== null && actions.length * 5 > children.length) {
     placeholder = document.createComment('');
@@ -71,7 +86,6 @@ Mapper.prototype.update = function(list) {
   for (i = 0; i < actions.length; ++i) {
     var a = actions[i];
     if (a.type === REMOVE) {
-      this.nrOfChildren--;
       container.removeChild(children[a.idx]);
     } else {
       if (lastAppendedTo === undefined) {
@@ -81,7 +95,6 @@ Mapper.prototype.update = function(list) {
         lastAppendedTo = a.to;
       }
       if (a.type === ADD) {
-        this.nrOfChildren++;
         frag.appendChild(this.createFn(list[a.elm], this.stream));
       } else {
         frag.appendChild(children[a.from]);
@@ -161,12 +174,12 @@ function addListeners(elm, lists) {
 }
 
 function updateProperty(str, obj, key) {
-  str.map(function(s) {
+  str.map(onFrame(function(s) {
     obj[key] = s;
-  });
+  }));
 }
 
-function applyStyles(elm, styles) {
+function handleStyles(elm, styles) {
   for (var key in styles) {
     var style = styles[key];
     if (isStream(style)) {
@@ -186,7 +199,7 @@ function handleClass(elm, cls) {
   } else {
     for (var key in cls) {
       if (isStream(cls[key])) {
-        cls[key].map(list.toggle.bind(list, key));
+        cls[key].map(onFrame(list.toggle.bind(list, key)));
       } else {
         list.toggle(key, cls[key]);
       }
@@ -197,7 +210,7 @@ function handleClass(elm, cls) {
 function handleStream(container, s) {
   var elm = document.createTextNode('');
   container.appendChild(elm);
-  s.map(function(v) {
+  s.map(onFrame(function(v) {
     if (v instanceof Element) {
       elm.parentNode.replaceChild(v, elm);
       elm = v;
@@ -211,7 +224,7 @@ function handleStream(container, s) {
         elm.textContent = v;
       }
     }
-  });
+  }));
 }
 
 function handleContent(elm, content) {
@@ -245,7 +258,7 @@ function v(name, props, content) {
     } else if (key[0] === 'o' && key[1] === 'n') {
       elm.addEventListener(key.slice(2), props[key]);
     } else if (key === 'style') {
-      applyStyles(elm, props.style);
+      handleStyles(elm, props.style);
     } else if (key === 'class') {
       handleClass(elm, props.class);
     } else if (typeof props[key] === 'function') {

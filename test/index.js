@@ -1,7 +1,10 @@
 var assert = require('assert');
+var fakeRaf = require('fake-raf');
 var v = require('../flyview');
 var flyd = require('flyd');
 var stream = flyd.stream;
+
+fakeRaf.use();
 
 it('returns an elment of proper tag', function() {
   var elm = v('div');
@@ -23,15 +26,18 @@ describe('class handling', function() {
     assert(elm.classList.contains('these'));
     assert(elm.classList.contains('classes'));
   });
-  it('toggles classes based on streams', function() {
+  it('toggles classes based on streams with raf', function() {
     var c1 = stream(true), c2 = stream(false), c3 = stream(true);
     var elm = v('div', {
       class: {add: c1, these: c2, classes: c3}
     });
+    fakeRaf.step();
     assert(elm.classList.contains('add'));
     assert(!elm.classList.contains('these'));
     assert(elm.classList.contains('classes'));
     c2(true);
+    assert(!elm.classList.contains('these'));
+    fakeRaf.step();
     assert(elm.classList.contains('these'));
   });
 });
@@ -44,15 +50,18 @@ describe('styles', function() {
     assert.equal(elm.style.color, 'black');
     assert.equal(elm.style.textAlign, 'center');
   });
-  it('applies styles from stream', function() {
+  it('applies styles from stream with raf', function() {
     var color = stream('black');
     var textAlign = stream('center');
     var elm = v('div', {
       style: {color: color, textAlign: textAlign},
     });
+    fakeRaf.step();
     assert.equal(elm.style.color, 'black');
     assert.equal(elm.style.textAlign, 'center');
     color('red');
+    assert.equal(elm.style.color, 'black');
+    fakeRaf.step();
     assert.equal(elm.style.color, 'red');
   });
 });
@@ -89,13 +98,6 @@ describe('content', function() {
     var elm = v('div', string);
     assert.equal(elm.firstChild.textContent, string);
   });
-  it('can be stream of strings', function() {
-    var s = stream('Hello');
-    var elm = v('div', s);
-    assert.equal(elm.firstChild.textContent, s());
-    s('World');
-    assert.equal(elm.firstChild.textContent, s());
-  });
   it('adds elements as children', function() {
     var child1 = document.createElement('div');
     var child2 = document.createElement('span');
@@ -118,41 +120,57 @@ describe('content', function() {
 
 describe('stream content', function() {
   var string = 'The slow fox rolled under the lazy cat';
-  it('sets content if stream is passed', function() {
+  it('sets content with raf if stream of strings is passed', function() {
     var stringStream = stream(string);
-    var elm = v('div', {}, stringStream);
+    var elm = v('div', stringStream);
+    assert.equal(elm.firstChild.textContent, '');
+    fakeRaf.step();
     assert.equal(elm.firstChild.textContent, string);
+    stringStream('Hello');
+    assert.equal(elm.firstChild.textContent, string);
+    fakeRaf.step();
+    assert.equal(elm.firstChild.textContent, 'Hello');
   });
   it('handles string stream among other children', function() {
     var stringStream = stream(string);
     var elm = v('div', {}, ['Foo ', stringStream]);
+    assert.equal('Foo ', elm.innerHTML);
+    fakeRaf.step();
     assert.equal('Foo ' + stringStream(), elm.innerHTML);
   });
   it('handles string stream among other children', function() {
     var stringStream = stream('foobar');
     var elm = v('div', {}, ['foo', stringStream, 'bar']);
+    fakeRaf.step();
     assert.equal('foo' + stringStream() + 'bar', elm.innerHTML);
     stringStream('ooo');
+    fakeRaf.step();
     assert.equal('foo' + stringStream() + 'bar', elm.innerHTML);
   });
   it('adds elements from streams', function() {
     var elmStream = stream(v('div', {}, 'Hello, Element!'));
     var elm = v('div', {}, ['foo', elmStream, 'bar']);
+    fakeRaf.step();
     assert.equal(elm.children.length, 1);
     assert.equal('foo<div>Hello, Element!</div>bar', elm.innerHTML);
     elmStream(v('b', {}, 'ooo'));
+    fakeRaf.step();
     assert.equal('foo<b>ooo</b>bar', elm.innerHTML);
   });
   it('adds elements from streams', function() {
     var elmStream = stream(undefined);
     var elm = v('div', {}, ['foo', elmStream, 'bar']);
+    fakeRaf.step();
     assert.equal(elm.children.length, 0);
     assert.equal('foobar', elm.innerHTML);
     elmStream(v('b', {}, 'ooo'));
+    fakeRaf.step();
     assert.equal('foo<b>ooo</b>bar', elm.innerHTML);
     elmStream(undefined);
+    fakeRaf.step();
     assert.equal('foobar', elm.innerHTML);
     elmStream('ooo');
+    fakeRaf.step();
     assert.equal('fooooobar', elm.innerHTML);
   });
 });
@@ -164,6 +182,8 @@ describe('map', function() {
       return v('span', {}, name);
     }
     var elm = v('div', {}, v.map(names, nameElm));
+    assert.equal(elm.children.length, 0);
+    fakeRaf.step();
     assert.equal(elm.children.length, 2);
     assert.equal(elm.children[0].innerHTML, '1');
     assert.equal(elm.children[1].innerHTML, '2');
@@ -175,6 +195,7 @@ describe('map', function() {
     }
     var elm = v('div', {}, v.map(names, nameElm));
     names(['1', '2', '3']);
+    fakeRaf.step();
     assert.equal(elm.children.length, 3);
     assert.equal(elm.children[0].innerHTML, '1');
     assert.equal(elm.children[1].innerHTML, '2');
@@ -186,11 +207,13 @@ describe('map', function() {
       return v('span', {}, number);
     }
     var elm = v('div', {}, v.map(numbers, numberElm));
+    fakeRaf.step();
     assert.equal(elm.children.length, 3);
     assert.equal(elm.children[0].innerHTML, '1');
     assert.equal(elm.children[1].innerHTML, '2');
     assert.equal(elm.children[2].innerHTML, '3');
     numbers(['1', '3']);
+    fakeRaf.step();
     assert.equal(elm.children.length, 2);
     assert.equal(elm.children[0].innerHTML, '1');
     assert.equal(elm.children[1].innerHTML, '3');
@@ -201,11 +224,13 @@ describe('map', function() {
       return v('span', {}, number);
     }
     var elm = v('div', {}, v.map(numbers, numberElm));
+    fakeRaf.step();
     assert.equal(elm.children.length, 3);
     assert.equal(elm.children[0].innerHTML, '1');
     assert.equal(elm.children[1].innerHTML, '2');
     assert.equal(elm.children[2].innerHTML, '3');
     numbers(['1', '3']);
+    fakeRaf.step();
     assert.equal(elm.children.length, 2);
     assert.equal(elm.children[0].innerHTML, '1');
     assert.equal(elm.children[1].innerHTML, '3');
@@ -218,22 +243,21 @@ describe('map', function() {
     var elm = v('div', {}, [
       numberElm(0),
       v.map(numbers, numberElm),
-      numberElm(4),
     ]);
-    assert.equal(elm.children.length, 5);
+    fakeRaf.step();
+    assert.equal(elm.children.length, 4);
     assert.equal(elm.children[0].innerHTML, '0');
     assert.equal(elm.children[1].innerHTML, '1');
     assert.equal(elm.children[2].innerHTML, '2');
     assert.equal(elm.children[3].innerHTML, '3');
-    assert.equal(elm.children[4].innerHTML, '4');
     numbers([2, 1]);
-    assert.equal(elm.children.length, 4);
+    fakeRaf.step();
+    assert.equal(elm.children.length, 3);
     assert.equal(elm.children[0].innerHTML, '0');
     assert.equal(elm.children[1].innerHTML, '2');
     assert.equal(elm.children[2].innerHTML, '1');
-    assert.equal(elm.children[3].innerHTML, '4');
   });
-  it('preserves element before and after', function() {
+  it('preserves elements before and after', function() {
     var numbers = stream([1, 2, 3]);
     function numberElm(number) {
       return v('span', {}, number);
@@ -243,6 +267,7 @@ describe('map', function() {
       v.map(numbers, numberElm),
       numberElm(4),
     ]);
+    fakeRaf.step();
     assert.equal(elm.children.length, 5);
     assert.equal(elm.children[0].innerHTML, '0');
     assert.equal(elm.children[1].innerHTML, '1');
@@ -250,6 +275,7 @@ describe('map', function() {
     assert.equal(elm.children[3].innerHTML, '3');
     assert.equal(elm.children[4].innerHTML, '4');
     numbers([2, 1]);
+    fakeRaf.step();
     assert.equal(elm.children.length, 4);
     assert.equal(elm.children[0].innerHTML, '0');
     assert.equal(elm.children[1].innerHTML, '2');
