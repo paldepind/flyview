@@ -97,12 +97,14 @@ describe('content', function() {
   it('props can be left out', function() {
     var elm = v('div', string);
     assert.equal(elm.firstChild.textContent, string);
+    var elm2 = v('div', elm);
+    assert.equal(elm2.firstChild.firstChild.textContent, string);
   });
   it('adds elements as children', function() {
     var child1 = document.createElement('div');
     var child2 = document.createElement('span');
     var child3 = document.createElement('a');
-    var elm = v('div', {}, [child1, child2, child3]);
+    var elm = v('div', [child1, child2, child3]);
     assert.equal(elm.children.length, 3);
     assert.equal(elm.children[0].tagName, 'DIV');
     assert.equal(elm.children[1].tagName, 'SPAN');
@@ -181,7 +183,7 @@ describe('map', function() {
     function nameElm(name) {
       return v('span', {}, name);
     }
-    var elm = v('div', {}, v.map(names, nameElm));
+    var elm = v('div', {}, v.map(nameElm, names));
     assert.equal(elm.children.length, 0);
     fakeRaf.step();
     assert.equal(elm.children.length, 2);
@@ -193,7 +195,7 @@ describe('map', function() {
     function nameElm(name) {
       return v('span', {}, name);
     }
-    var elm = v('div', {}, v.map(names, nameElm));
+    var elm = v('div', v.map(nameElm, names));
     names(['1', '2', '3']);
     fakeRaf.step();
     assert.equal(elm.children.length, 3);
@@ -206,7 +208,7 @@ describe('map', function() {
     function numberElm(number) {
       return v('span', {}, number);
     }
-    var elm = v('div', {}, v.map(numbers, numberElm));
+    var elm = v('div', {}, v.map(numberElm, numbers));
     fakeRaf.step();
     assert.equal(elm.children.length, 3);
     assert.equal(elm.children[0].innerHTML, '1');
@@ -223,7 +225,7 @@ describe('map', function() {
     function numberElm(number) {
       return v('span', {}, number);
     }
-    var elm = v('div', {}, v.map(numbers, numberElm));
+    var elm = v('div', {}, v.map(numberElm, numbers));
     fakeRaf.step();
     assert.equal(elm.children.length, 3);
     assert.equal(elm.children[0].innerHTML, '1');
@@ -242,7 +244,7 @@ describe('map', function() {
     }
     var elm = v('div', {}, [
       numberElm(0),
-      v.map(numbers, numberElm),
+      v.map(numberElm, numbers),
     ]);
     fakeRaf.step();
     assert.equal(elm.children.length, 4);
@@ -264,7 +266,7 @@ describe('map', function() {
     }
     var elm = v('div', {}, [
       numberElm(0),
-      v.map(numbers, numberElm),
+      v.map(numberElm, numbers),
       numberElm(4),
     ]);
     fakeRaf.step();
@@ -289,7 +291,7 @@ describe('map', function() {
     }
     var elm = v('div', {}, [
       numberElm(0),
-      v.map(numbers, numberElm),
+      v.map(numberElm, numbers),
       numberElm(4),
     ]);
     fakeRaf.step();
