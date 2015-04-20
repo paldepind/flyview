@@ -275,6 +275,11 @@ function v(name, props, content) {
 }
 
 v.map = function(s, f, p) {
+  if (arguments.length === 1) {
+    return function(f, p) {
+      return new Mapper(f, s, p);
+    };
+  }
   return new Mapper(f, s, p);
 };
 

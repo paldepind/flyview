@@ -314,4 +314,17 @@ describe('map', function() {
     assert.equal(elm.children[2].innerHTML, '1');
     assert.equal(elm.children[3].innerHTML, '4');
   });
+  it('is curried', function() {
+    var names = stream(['1', '2']);
+    function nameElm(name) {
+      return v('span', {}, name);
+    }
+    var mapToNameElm = v.map(nameElm);
+    var elm = v('div', {}, mapToNameElm(names));
+    assert.equal(elm.children.length, 0);
+    fakeRaf.step();
+    assert.equal(elm.children.length, 2);
+    assert.equal(elm.children[0].innerHTML, '1');
+    assert.equal(elm.children[1].innerHTML, '2');
+  });
 });
